@@ -49,6 +49,9 @@ class PropertyDef:
     off_value: Any = 0
     enabled_default: bool = True
     confirmed: bool = False  # flipped to True once verified against a probe
+    # Optional value decoder ("schedule" = packed 3-byte day/hour/minute
+    # entries as hex).
+    decoder: str | None = None
 
     @property
     def prop_key(self) -> str:
@@ -101,8 +104,15 @@ STATUS_OPTIONS: dict[Any, str] = {
 #   1.4 = "1113" (firmware build)      1.5 = serial number
 #   2.1 = status enum (confirmed via keyDefine + watch transitions)
 #   2.5 = device clock, unix seconds, ticks continuously (confirmed)
+#   3.1 = cleaning mode: 0 automatic, 2 manual (confirmed via watch;
+#         value 1 unobserved — possibly a scheduled-only mode)
+#   3.7 = cleaning schedule, packed hex entries of 3 bytes each:
+#         [day bitmask | 0x80 enabled][hour][minute]; FF=every day
+#         (confirmed via watch: "FF0B00" every day 11:00, "810A00" Mon 10:00)
 #   3.13 = air purification running 0/1 (confirmed via watch)
 #   3.14 = deodorizing spray running 0/1 (confirmed via watch)
+#   3.6 / 3.20 = "FF00000800" — suspected time windows (enabled, 00:00-08:00),
+#         probably DND and air purification schedule; unconfirmed
 #   2.2, 2.6, 2.10, rest of 3.x = unmapped; exposed as raw sensors.
 #   Correlate more with: tools/mova_probe.py --watch
 PROPERTIES: list[PropertyDef] = [
@@ -151,6 +161,25 @@ PROPERTIES: list[PropertyDef] = [
         device_class="timestamp",
         entity_category="diagnostic",
         enabled_default=False,  # ticks every poll; noisy in the recorder
+        confirmed=True,
+    ),
+    PropertyDef(
+        key="cleaning_mode",
+        siid=3,
+        piid=1,
+        kind="select",
+        icon="mdi:robot",
+        options={0: "automatic", 2: "manual"},
+        confirmed=True,
+    ),
+    PropertyDef(
+        key="cleaning_schedule",
+        siid=3,
+        piid=7,
+        kind="sensor",
+        entity_category="diagnostic",
+        icon="mdi:calendar-clock",
+        decoder="schedule",
         confirmed=True,
     ),
     PropertyDef(

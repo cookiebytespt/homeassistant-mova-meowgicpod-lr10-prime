@@ -57,11 +57,21 @@
       "firmware_build": { "name": "Firmware build" },
       "serial_number": { "name": "Serial number" },
       "fault_code": { "name": "Fault code" },
-      "device_time": { "name": "Device time" }
+      "device_time": { "name": "Device time" },
+      "cleaning_schedule": { "name": "Cleaning schedule" }
     },
     "binary_sensor": {
       "air_purification": { "name": "Air purification" },
       "deodorizing": { "name": "Deodorizing" }
+    },
+    "select": {
+      "cleaning_mode": {
+        "name": "Cleaning mode",
+        "state": {
+          "automatic": "Automatic",
+          "manual": "Manual"
+        }
+      }
     }
   }
 }

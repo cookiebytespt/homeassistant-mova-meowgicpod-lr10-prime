@@ -15,6 +15,33 @@ from .const import PROPERTIES, PropertyDef
 from .coordinator import MovaLitterBoxCoordinator
 from .entity import MovaLitterBoxEntity
 
+_DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def decode_schedule(value: Any) -> list[str]:
+    """Decode a packed schedule blob into human-readable entries.
+
+    Format (confirmed on q2504w): concatenated 3-byte entries as hex —
+    [day bitmask, bit 7 = enabled][hour][minute]. 0xFF = enabled + every day.
+    """
+    if not isinstance(value, str) or not value:
+        return []
+    entries: list[str] = []
+    try:
+        raw = bytes.fromhex(value)
+    except ValueError:
+        return []
+    for offset in range(0, len(raw) - 2, 3):
+        mask, hour, minute = raw[offset], raw[offset + 1], raw[offset + 2]
+        enabled = bool(mask & 0x80)
+        days = [d for i, d in enumerate(_DAYS) if mask & (1 << i)]
+        day_text = "Every day" if len(days) == 7 else ",".join(days) or "?"
+        entries.append(
+            f"{day_text} {hour:02d}:{minute:02d}"
+            + ("" if enabled else " (disabled)")
+        )
+    return entries
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -81,6 +108,9 @@ class MovaPropertySensor(MovaLitterBoxEntity, SensorEntity):
         value = self.coordinator.get_property(
             self._definition.siid, self._definition.piid
         )
+        if self._definition.decoder == "schedule":
+            entries = decode_schedule(value)
+            return "; ".join(entries)[:255] if entries else "none"
         if (
             value is not None
             and self._attr_device_class == SensorDeviceClass.TIMESTAMP
@@ -100,13 +130,14 @@ class MovaPropertySensor(MovaLitterBoxEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
+        value = self.coordinator.get_property(
+            self._definition.siid, self._definition.piid
+        )
+        if self._definition.decoder == "schedule":
+            return {"raw_value": value, "entries": decode_schedule(value)}
         if not self._definition.options:
             return None
-        return {
-            "raw_value": self.coordinator.get_property(
-                self._definition.siid, self._definition.piid
-            )
-        }
+        return {"raw_value": value}
 
 
 class MovaRawPropertySensor(MovaLitterBoxEntity, SensorEntity):
