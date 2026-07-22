@@ -35,12 +35,27 @@ stool mode, auto-clean DND 😴, air purification options, and auto spray.
 
 ## 📦 Installation (HACS)
 
+**1️⃣ Add the repository to HACS** — click the button, then install
+**MOVA Litter Box (MeowgicPod)** and restart Home Assistant:
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=cookiebytespt&repository=homeassistant-mova-litter-box&category=integration)
+
+**2️⃣ Add the integration** — click the button and sign in with your
+MOVAhome account (email + password + region), then pick your litter box 🐈:
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=mova_litter_box)
+
+<details>
+<summary>Manual steps (if the buttons don't work)</summary>
+
 1. HACS → Integrations → ⋮ → *Custom repositories*
 2. Add this repository URL, category **Integration**
 3. Install **MOVA Litter Box (MeowgicPod)** and restart Home Assistant
 4. Settings → Devices & services → *Add integration* → **MOVA Litter Box**
 5. Sign in with your MOVAhome account (email + password + region) and pick
    your litter box 🐈
+
+</details>
 
 ## 🗺️ Roadmap
 

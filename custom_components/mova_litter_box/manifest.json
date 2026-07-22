@@ -1,13 +1,13 @@
 {
   "domain": "mova_litter_box",
   "name": "MOVA Litter Box (MeowgicPod)",
-  "codeowners": ["@cookiebytes"],
+  "codeowners": ["@cookiebytespt", "@portellaa"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/cookiebytes/homeassistant-mova-litter-box",
+  "documentation": "https://github.com/cookiebytespt/homeassistant-mova-litter-box",
   "integration_type": "device",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/cookiebytes/homeassistant-mova-litter-box/issues",
+  "issue_tracker": "https://github.com/cookiebytespt/homeassistant-mova-litter-box/issues",
   "requirements": ["requests>=2.28.0"],
   "version": "0.1.0"
 }
