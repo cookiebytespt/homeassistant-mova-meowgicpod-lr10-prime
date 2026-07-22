@@ -1,0 +1,67 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "MOVA account",
+        "description": "Sign in with the same account you use in the MOVAhome app.",
+        "data": {
+          "username": "Email",
+          "password": "Password",
+          "country": "Region"
+        }
+      },
+      "device": {
+        "title": "Select device",
+        "data": {
+          "did": "Device"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password.",
+      "cannot_connect": "Could not reach the MOVA cloud. Check the region.",
+      "no_devices": "No devices found on this account."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "device_not_found": "Selected device was not found."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "device_status": {
+        "name": "Status",
+        "state": {
+          "standby": "Standby",
+          "cleaning": "Cleaning",
+          "cleaning_paused": "Cleaning paused",
+          "emptying": "Emptying",
+          "emptying_paused": "Emptying paused",
+          "leveling": "Leveling",
+          "leveling_paused": "Leveling paused",
+          "canceling_cleaning": "Canceling cleaning",
+          "canceling_emptying": "Canceling emptying",
+          "canceling_leveling": "Canceling leveling",
+          "device_abnormal": "Device abnormal",
+          "weighing_protection": "Weighing protection",
+          "air_purification": "Air purification on",
+          "safety_escape": "Safety escape mode"
+        }
+      },
+      "firmware_build": { "name": "Firmware build" },
+      "serial_number": { "name": "Serial number" },
+      "fault_code": { "name": "Fault code" },
+      "device_time": { "name": "Device time" }
+    },
+    "binary_sensor": {
+      "air_purification": { "name": "Air purification" },
+      "deodorizing": { "name": "Deodorizing" }
+    }
+  }
+}
