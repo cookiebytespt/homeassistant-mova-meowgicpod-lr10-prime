@@ -134,8 +134,22 @@ STATUS_OPTIONS: dict[Any, str] = {
 #   3.18 = auto spray duration (10 / 30 seen)
 #   3.19 = air purification DND 0/1     3.20 = air purification DND window
 #   Time windows: 5-byte hex [days|0x80 enabled][sh][sm][eh][em].
-#   Still unmapped: 2.2, 2.6, 3.2, 3.12, 3.21 (cat visit / litter level /
-#   bin full candidates — need a cat).
+#   3.21 = litter-smoothing offset (see SMOOTHING_OPTIONS below).
+#   2.2 = status flags bitmask? (seen = 128 while leveling paused, else 0).
+#   Still unmapped: 2.6, 3.2, 3.12 (litter level / bin full candidates).
+# Litter-smoothing offset (property 3.21). All values confirmed on a real
+# device via --watch: 0 centered, 700/2000/3000 = offset left slightly/
+# moderately/significantly, -700/-2000/-3000 = the symmetric offset right.
+SMOOTHING_OPTIONS: dict[Any, str] = {
+    3000: "left_significant",
+    2000: "left_moderate",
+    700: "left_slight",
+    0: "centered",
+    -700: "right_slight",
+    -2000: "right_moderate",
+    -3000: "right_significant",
+}
+
 PROPERTIES: list[PropertyDef] = [
     PropertyDef(
         key="device_status",
@@ -238,6 +252,18 @@ PROPERTIES: list[PropertyDef] = [
         kind="switch",
         entity_category="config",
         icon="mdi:emoticon-poop",
+        confirmed=True,
+    ),
+    PropertyDef(
+        key="smoothing_offset",
+        siid=3,
+        piid=21,
+        kind="select",
+        entity_category="config",
+        icon="mdi:arrow-left-right",
+        # Litter-smoothing offset (app: "smoothing setting"). All 7 values
+        # confirmed via watch (0, ±700/±2000/±3000).
+        options=SMOOTHING_OPTIONS,
         confirmed=True,
     ),
     PropertyDef(

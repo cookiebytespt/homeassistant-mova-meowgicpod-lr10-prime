@@ -68,7 +68,7 @@ MOVAhome account (email + password + region), then pick your litter box 🐈:
 | 🐈 | **Cat visits** — last cat weight, last visit time, visit duration, and a 24-hour visit count, from the toilet-event log | ✅ Done |
 | 🏷️ | **Name your cats** — configure each cat's name and weight; per-cat "last visit" / "visits (24 h)" sensors and a "Last cat" sensor | ✅ Done |
 | 🧴 | **Consumables** — remaining life and reset for the air purification filter, deodorizing liquid, and waste bag | 🔜 Planned |
-| 🌀 | **Smoothing setting** — litter-smoothing offset: centered, or offset left/right by slight / moderate / significant | 🔜 Planned |
+| 🌀 | **Smoothing setting** — litter-smoothing offset select: centered, or offset left/right by slight / moderate / significant | ✅ Done |
 | 🆙 | **Firmware updates** — surface the firmware-upgrade check and trigger as an HA `update` entity | 🔜 Planned |
 | ⚖️ | **Weight unit switch** — toggle kg / lb to match the app | 🔜 Planned |
 | 🔧 | **Tune remaining properties** — the last unmapped values (`2.2`, `2.6`, `3.2`, `3.12`, `3.21`); litter level and waste bin state | 🧪 Investigating |

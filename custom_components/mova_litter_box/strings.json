@@ -136,6 +136,18 @@
           "short": "Short (10)",
           "long": "Long (30)"
         }
+      },
+      "smoothing_offset": {
+        "name": "Smoothing",
+        "state": {
+          "left_significant": "Offset left — significantly to the right",
+          "left_moderate": "Offset left — moderately to the right",
+          "left_slight": "Offset left — slightly to the right",
+          "centered": "Centered",
+          "right_slight": "Offset right — slightly to the left",
+          "right_moderate": "Offset right — moderately to the left",
+          "right_significant": "Offset right — significantly to the left"
+        }
       }
     }
   }
