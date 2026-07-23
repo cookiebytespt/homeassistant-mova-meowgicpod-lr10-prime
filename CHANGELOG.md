@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — 2026-07-23
+
+Meet the cats. 🐱
+
+### Added
+
+- **Cat visit sensors** — Last cat weight, Last visit (timestamp), Last
+  visit duration, and Visits (24 h), decoded from the device's toilet-visit
+  event log.
+- **Configurable pet names** — name your cats and set each one's typical
+  weight in the integration's Options. Visits are attributed to the closest
+  weight, adding a **Last cat** sensor plus per-cat **last visit** and
+  **visits (24 h)** sensors. Editing pets reloads the entry automatically.
+
 ## 0.2.0 — 2026-07-23
 
 Full device control. 🎮🐱
