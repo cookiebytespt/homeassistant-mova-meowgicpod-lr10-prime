@@ -23,6 +23,12 @@ COUNTRIES = ["eu", "us", "sg", "cn"]
 
 UPDATE_INTERVAL_SECONDS = 60
 
+# Pet (cat) configuration — stored in entry.options. Visits are attributed to
+# the configured pet whose weight is closest to the measured visit weight.
+CONF_PETS = "pets"
+MAX_PETS = 4
+PET_MATCH_TOLERANCE_KG = 1.5
+
 # Models handled by this integration. Extend as probes confirm more.
 # MOVA litter box models are expected to look like "mova.litter.*".
 SUPPORTED_MODEL_KEYWORDS = ["litter", "meowgic", "lr10", "lb10"]

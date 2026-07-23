@@ -1,4 +1,25 @@
 {
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pets",
+        "description": "Name your cats and give each one's typical weight (kg). Visits are attributed to the closest weight, so you get per-cat sensors. Leave rows blank for fewer cats.",
+        "data": {
+          "pet_1_name": "Cat 1 name",
+          "pet_1_weight": "Cat 1 weight (kg)",
+          "pet_2_name": "Cat 2 name",
+          "pet_2_weight": "Cat 2 weight (kg)",
+          "pet_3_name": "Cat 3 name",
+          "pet_3_weight": "Cat 3 weight (kg)",
+          "pet_4_name": "Cat 4 name",
+          "pet_4_weight": "Cat 4 weight (kg)"
+        }
+      }
+    },
+    "error": {
+      "weight_required": "Please give a weight for each named cat."
+    }
+  },
   "config": {
     "step": {
       "user": {
@@ -60,7 +81,12 @@
       "device_time": { "name": "Device time" },
       "cleaning_schedule": { "name": "Cleaning schedule" },
       "auto_clean_dnd_window": { "name": "Auto-clean DND window" },
-      "air_purification_dnd_window": { "name": "Air purification DND window" }
+      "air_purification_dnd_window": { "name": "Air purification DND window" },
+      "last_cat_weight": { "name": "Last cat weight" },
+      "last_visit": { "name": "Last visit" },
+      "last_visit_duration": { "name": "Last visit duration" },
+      "visits_24h": { "name": "Visits (24 h)" },
+      "last_pet": { "name": "Last cat" }
     },
     "binary_sensor": {
       "air_purification": { "name": "Air purification" },
