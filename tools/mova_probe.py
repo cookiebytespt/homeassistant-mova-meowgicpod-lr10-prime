@@ -52,7 +52,7 @@ CN_RLC = "1c80b3787b2266776bcdc481f37d8fa42ba10a30af81a6df-1"
 
 # Sweep ranges for the property grid probe.
 SWEEP_SIIDS = range(1, 16)      # service ids 1..15
-SWEEP_PIIDS = range(1, 31)      # property ids 1..30
+SWEEP_PIIDS = range(1, 41)      # property ids 1..40 (widened for cat/visit props)
 CHUNK = 60
 
 
@@ -64,6 +64,7 @@ class MovaCloud:
         self.session = requests.Session()
         self.token: str | None = None
         self.tenant = DEFAULT_TENANT
+        self.uid: str | None = None
         self.request_id = int(time.time()) % 100000
 
     @property
@@ -108,6 +109,7 @@ class MovaCloud:
         data = resp.json()
         self.token = data.get("access_token")
         self.tenant = data.get("tenant_id") or self.tenant
+        self.uid = data.get("uid") or self.uid
         if not self.token:
             raise SystemExit(f"Login returned no access_token: {data}")
         return data
@@ -165,6 +167,32 @@ class MovaCloud:
                     "params": params,
                 },
             },
+        )
+
+    def history(self, did: str, siid: int, sub_iid: int, kind: str = "eiid",
+                limit: int = 20, since: int = 0) -> dict | None:
+        """Query the device data-history log (events/props/actions).
+
+        `kind` is 'eiid' (events — cat visits etc.), 'piid' or 'aiid'.
+        This is how the app retrieves per-visit weight/duration records.
+        """
+        params = {
+            "uid": str(self.uid) if self.uid else "",
+            "did": str(did),
+            "from": since if since else 1,
+            "limit": limit,
+            "siid": str(siid),
+            kind: str(sub_iid),
+            "region": self.country,
+            "type": 3,
+        }
+        return self.api("dreame-user-iot/iotstatus/history", params)
+
+    def user_data(self, did: str, props: str = "") -> dict | None:
+        """App-side per-device user data (e.g. cat profiles)."""
+        return self.api(
+            "dreame-user-iot/iotuserdata/getDeviceData",
+            {"did": str(did), "model": props},
         )
 
 
@@ -418,6 +446,58 @@ def scan_actions_mode(cloud: "MovaCloud", siid_lo: int, siid_hi: int,
           "may need arguments, or lives outside the swept range.")
 
 
+def events_mode(cloud: "MovaCloud", since_minutes: int = 240) -> None:
+    """Sweep the device event/history log to find cat-visit style records.
+
+    Litter boxes log per-use events (weight, duration, timestamp) rather than
+    exposing them as live properties, so `--watch` won't catch a cat visit.
+    This queries iotstatus/history across a grid of siid.eiid and prints any
+    records found in the last `since_minutes`. Read-only.
+    """
+    rec = _first_device(cloud)
+    did = str(rec.get("did"))
+    since = int(time.time()) - since_minutes * 60
+    print(f"Querying event history for {rec.get('model')} "
+          f"({rec.get('customName')}) since {since_minutes} min ago "
+          f"(uid={cloud.uid}) ...")
+
+    out: dict[str, object] = {}
+    found_any = False
+    for siid in range(1, 9):
+        for eiid in range(1, 16):
+            resp = cloud.history(did, siid, eiid, kind="eiid",
+                                 limit=20, since=since)
+            data = resp.get("data") if isinstance(resp, dict) else None
+            records = None
+            if isinstance(data, dict):
+                records = data.get("list") or data.get("records")
+            elif isinstance(data, list):
+                records = data
+            if records:
+                found_any = True
+                out[f"event {siid}.{eiid}"] = records
+                print(f"\n=== event {siid}.{eiid} : {len(records)} record(s) ===")
+                for r in records[:5]:
+                    print("   " + json.dumps(r, ensure_ascii=False)[:300])
+            time.sleep(0.15)
+
+    # Also try the app user-data blob (per-cat profiles live here on some models)
+    ud = cloud.user_data(did)
+    if isinstance(ud, dict) and ud.get("data"):
+        out["user_data"] = ud["data"]
+        print("\n=== iotuserdata/getDeviceData ===")
+        print("   " + json.dumps(ud["data"], ensure_ascii=False)[:600])
+
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "mova_events_output.json")
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(out, fh, indent=2, ensure_ascii=False)
+    if not found_any and "user_data" not in out:
+        print("\nNo event records found in that window. Try a larger window, "
+              "e.g. --events 1440 (24h), soon after a confirmed cat visit.")
+    print(f"\nSaved: {path}. Share it back.")
+
+
 def _parse_scan_args(argv: list) -> tuple[int, int, int, int]:
     """Parse '--scan-actions [siid_lo siid_hi aiid_lo aiid_hi]'."""
     idx = argv.index("--scan-actions")
@@ -459,6 +539,15 @@ def main() -> None:
     country = os.environ.get("MOVA_COUNTRY", "eu")
     if not username or not password:
         raise SystemExit("Set MOVA_USERNAME and MOVA_PASSWORD env vars first.")
+
+    if "--events" in sys.argv:
+        idx = sys.argv.index("--events")
+        mins = 240
+        if idx + 1 < len(sys.argv) and sys.argv[idx + 1].isdigit():
+            mins = int(sys.argv[idx + 1])
+        cloud = MovaCloud(username, password, country)
+        events_mode(cloud, mins)
+        return
 
     if "--scan-actions" in sys.argv:
         lo_s, hi_s, lo_a, hi_a = _parse_scan_args(sys.argv)

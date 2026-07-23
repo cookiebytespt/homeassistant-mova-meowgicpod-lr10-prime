@@ -50,6 +50,7 @@ class MovaCloudClient:
         self._refresh_token: str | None = None
         self._token_expires: float = 0
         self._tenant = DEFAULT_TENANT
+        self._uid: str | None = None
         self._request_id = int(time.time()) % 100000
 
     # ------------------------------------------------------------- auth ---
@@ -121,6 +122,7 @@ class MovaCloudClient:
         self._refresh_token = data.get("refresh_token")
         self._token_expires = time.time() + float(data.get("expires_in", 3600)) - 120
         self._tenant = data.get("tenant_id") or self._tenant
+        self._uid = data.get("uid") or self._uid
         return data
 
     def _ensure_login(self) -> None:
@@ -197,6 +199,41 @@ class MovaCloudClient:
                         )
                         result[key] = item.get("value")
         return result
+
+    def get_event_history(
+        self,
+        did: str,
+        siid: int,
+        eiid: int,
+        limit: int = 20,
+        since: int = 1,
+    ) -> list[dict[str, Any]]:
+        """Fetch event-log records (e.g. cat toilet visits at 4.1).
+
+        Each record has a JSON `history` field of [{piid,value}] arguments
+        plus a `createTime` (ms). Returns the raw record list, newest first.
+        """
+        response = self._api(
+            "dreame-user-iot/iotstatus/history",
+            {
+                "uid": str(self._uid) if self._uid else "",
+                "did": str(did),
+                "from": since,
+                "limit": limit,
+                "siid": str(siid),
+                "eiid": str(eiid),
+                "region": self._country,
+                "type": 3,
+            },
+        )
+        data = response.get("data")
+        if isinstance(data, dict):
+            records = data.get("list") or data.get("records") or []
+        elif isinstance(data, list):
+            records = data
+        else:
+            records = []
+        return [r for r in records if isinstance(r, dict)]
 
     # ------------------------------------------------------ command path ---
     def _send_command(

@@ -59,21 +59,20 @@ MOVAhome account (email + password + region), then pick your litter box 🐈:
 
 ## 🗺️ Roadmap
 
-- ✅ **MOVA cloud transport** — login, token refresh, device discovery,
-  live property polling, and command channel.
-- ✅ **Config flow** — sign in with your MOVAhome account, pick your device,
-  re-authentication support.
-- ✅ **Core entities** — status, settings switches, mode/duration selects,
-  cleaning delay, decoded schedule and DND windows, diagnostics.
-- ✅ **Action buttons & control services** — Start cleaning, Empty waste,
-  Level litter, Pause, Resume, Stop, plus `send_action` / `set_property` /
-  `refresh` services.
-- 🔧 **Tune the remaining device properties** — identify the last few
-  unmapped values (`2.2`, `2.6`, `3.2`, `3.12`, `3.21`) and expose them as
-  properly named entities.
-- 🐈 **Map the cats** *(if possible)* — cat visit detection, per-cat
-  weight, and toilet-habit tracking; litter level and waste bin state.
-- 📡 **Push updates** — switch from polling to MQTT for real-time state.
+|  | Feature | Status |
+|:---:|:---|:---:|
+| ☁️ | **MOVA cloud transport** — login, token refresh, device discovery, live property polling, and command channel | ✅ Done |
+| ⚙️ | **Config flow** — sign in with your MOVAhome account, pick your device, re-authentication support | ✅ Done |
+| 🎛️ | **Core entities** — status, settings switches, mode/duration selects, cleaning delay, decoded schedule and DND windows, diagnostics | ✅ Done |
+| ▶️ | **Action buttons & control services** — Start cleaning, Empty waste, Level litter, Pause, Resume, Stop, plus `send_action` / `set_property` / `refresh` | ✅ Done |
+| 🐈 | **Cat visits** — last cat weight, last visit time, visit duration, and a 24-hour visit count, from the toilet-event log | ✅ Done |
+| 🏷️ | **Name your cats** — configure each cat's name and weight; per-cat "last visit" / "visits (24 h)" sensors and a "Last cat" sensor | ✅ Done |
+| 🧴 | **Consumables** — remaining life and reset for the air purification filter, deodorizing liquid, and waste bag | 🔜 Planned |
+| 🌀 | **Smoothing setting** — litter-smoothing offset: centered, or offset left/right by slight / moderate / significant | 🔜 Planned |
+| 🆙 | **Firmware updates** — surface the firmware-upgrade check and trigger as an HA `update` entity | 🔜 Planned |
+| ⚖️ | **Weight unit switch** — toggle kg / lb to match the app | 🔜 Planned |
+| 🔧 | **Tune remaining properties** — the last unmapped values (`2.2`, `2.6`, `3.2`, `3.12`, `3.21`); litter level and waste bin state | 🧪 Investigating |
+| 📡 | **Push updates** — switch from polling to MQTT for real-time state | 💡 Idea |
 
 Want to help? See below. 👇
 

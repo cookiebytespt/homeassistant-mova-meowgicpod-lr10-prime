@@ -21,13 +21,27 @@ from .const import (
     CONF_COUNTRY,
     CONF_DID,
     CONF_MODEL,
+    CONF_PETS,
     COUNTRIES,
     DEFAULT_COUNTRY,
     DOMAIN,
+    MAX_PETS,
     SUPPORTED_MODEL_KEYWORDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def pets_from_options(options: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the configured pets [{name, weight}] from entry options."""
+    pets = options.get(CONF_PETS)
+    if not isinstance(pets, list):
+        return []
+    result: list[dict[str, Any]] = []
+    for pet in pets:
+        if isinstance(pet, dict) and pet.get("name") and pet.get("weight"):
+            result.append({"name": str(pet["name"]), "weight": float(pet["weight"])})
+    return result
 
 STEP_USER_SCHEMA = vol.Schema(
     {
@@ -63,6 +77,13 @@ class MovaLitterBoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._credentials: dict[str, Any] = {}
         self._devices: list[dict[str, Any]] = []
+
+    @staticmethod
+    @config_entries.callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> MovaOptionsFlow:
+        return MovaOptionsFlow()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -177,5 +198,48 @@ class MovaLitterBoxConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="reauth_confirm",
             data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
+            errors=errors,
+        )
+
+
+class MovaOptionsFlow(config_entries.OptionsFlow):
+    """Configure pet names and weights for visit attribution."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            pets: list[dict[str, Any]] = []
+            for i in range(1, MAX_PETS + 1):
+                name = (user_input.get(f"pet_{i}_name") or "").strip()
+                weight = user_input.get(f"pet_{i}_weight")
+                if name and weight:
+                    pets.append({"name": name, "weight": float(weight)})
+                elif name and not weight:
+                    errors["base"] = "weight_required"
+            if not errors:
+                return self.async_create_entry(
+                    title="", data={CONF_PETS: pets}
+                )
+
+        current = pets_from_options(self.config_entry.options)
+        schema: dict[Any, Any] = {}
+        for i in range(1, MAX_PETS + 1):
+            existing = current[i - 1] if i <= len(current) else None
+            name_default = existing["name"] if existing else ""
+            weight_default = existing["weight"] if existing else None
+            schema[vol.Optional(
+                f"pet_{i}_name",
+                description={"suggested_value": name_default},
+            )] = str
+            schema[vol.Optional(
+                f"pet_{i}_weight",
+                description={"suggested_value": weight_default},
+            )] = vol.All(vol.Coerce(float), vol.Range(min=0.1, max=25))
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema),
             errors=errors,
         )

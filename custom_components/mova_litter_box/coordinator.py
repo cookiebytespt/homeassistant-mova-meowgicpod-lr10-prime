@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import time
 from datetime import timedelta
 from typing import Any
 
@@ -22,10 +24,40 @@ from .const import (
     DISCOVERY_PIIDS,
     DISCOVERY_SIIDS,
     DOMAIN,
+    PET_MATCH_TOLERANCE_KG,
     UPDATE_INTERVAL_SECONDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Cat toilet-visit event log (discovered via mova_probe.py --events).
+# Event 4.1 history args: piid1 weight (g), piid2 timestamp (unix s),
+# piid3 duration (ms), piid5 = 3600 (constant, unknown).
+VISIT_EVENT_SIID = 4
+VISIT_EVENT_EIID = 1
+
+
+def parse_visit(record: dict[str, Any]) -> dict[str, Any] | None:
+    """Parse one 4.1 event record into a normalised visit dict."""
+    raw = record.get("history")
+    if not isinstance(raw, str):
+        return None
+    try:
+        args = {a["piid"]: a["value"] for a in json.loads(raw)
+                if isinstance(a, dict) and "piid" in a}
+    except (ValueError, TypeError):
+        return None
+    ts = args.get(2)
+    if ts is None:
+        return None
+    weight_g = args.get(1)
+    duration_ms = args.get(3)
+    return {
+        "timestamp": float(ts),
+        "weight_kg": round(weight_g / 1000, 2) if weight_g is not None else None,
+        "duration_s": round(duration_ms / 1000, 1)
+        if duration_ms is not None else None,
+    }
 
 
 class MovaLitterBoxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -62,6 +94,19 @@ class MovaLitterBoxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Keys confirmed to exist on this device; discovered on first poll.
         self._live_keys: list[tuple[int, int]] | None = None
         self.device_record: dict[str, Any] = {}
+        # Configured pets [{name, weight}] for visit attribution.
+        from .config_flow import pets_from_options  # noqa: PLC0415
+
+        self.pets = pets_from_options(dict(entry.options))
+
+    def _match_pet(self, weight_kg: float | None) -> str | None:
+        """Attribute a visit weight to the nearest configured pet."""
+        if weight_kg is None or not self.pets:
+            return None
+        best = min(self.pets, key=lambda p: abs(p["weight"] - weight_kg))
+        if abs(best["weight"] - weight_kg) <= PET_MATCH_TOLERANCE_KG:
+            return best["name"]
+        return None
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -114,7 +159,53 @@ class MovaLitterBoxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for key, value in properties.items()
             if value is not None
         }
-        return {"properties": cleaned, "record": self.device_record}
+
+        visits = self._fetch_visits()
+        return {
+            "properties": cleaned,
+            "record": self.device_record,
+            "visits": visits,
+        }
+
+    def _fetch_visits(self) -> dict[str, Any]:
+        """Fetch and summarise cat toilet-visit events (event 4.1)."""
+        try:
+            records = self.client.get_event_history(
+                self.did, VISIT_EVENT_SIID, VISIT_EVENT_EIID, limit=50
+            )
+        except MovaCloudError as err:  # non-fatal
+            _LOGGER.debug("Visit history fetch failed: %s", err)
+            return {}
+
+        parsed = [p for p in (parse_visit(r) for r in records) if p]
+        if not parsed:
+            return {"count_recent": 0, "pets": {}}
+        parsed.sort(key=lambda v: v["timestamp"], reverse=True)
+        for visit in parsed:
+            visit["pet"] = self._match_pet(visit["weight_kg"])
+        latest = parsed[0]
+        now = time.time()
+        day_ago = now - 86400
+
+        # Per-pet rollup: latest visit time + 24h count for each configured pet.
+        pets_summary: dict[str, dict[str, Any]] = {}
+        for pet in self.pets:
+            name = pet["name"]
+            visits = [v for v in parsed if v.get("pet") == name]
+            pets_summary[name] = {
+                "last_timestamp": visits[0]["timestamp"] if visits else None,
+                "count_24h": sum(1 for v in visits if v["timestamp"] >= day_ago),
+            }
+
+        return {
+            "last_weight_kg": latest["weight_kg"],
+            "last_timestamp": latest["timestamp"],
+            "last_duration_s": latest["duration_s"],
+            "last_pet": latest.get("pet"),
+            "count_recent": len(parsed),
+            "count_24h": sum(1 for v in parsed if v["timestamp"] >= day_ago),
+            "pets": pets_summary,
+        }
 
     # Helpers used by entities -------------------------------------------
     def get_property(self, siid: int, piid: int) -> Any:

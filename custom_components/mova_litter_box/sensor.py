@@ -5,7 +5,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -95,7 +99,134 @@ async def async_setup_entry(
 
     _sync_discovered()
     entry.async_on_unload(coordinator.async_add_listener(_sync_discovered))
+
+    entities.extend(
+        MovaVisitSensor(coordinator, spec) for spec in VISIT_SENSORS
+    )
+    if coordinator.pets:
+        entities.append(MovaLastPetSensor(coordinator))
+        for pet in coordinator.pets:
+            entities.append(MovaPetSensor(coordinator, pet["name"], "last_visit"))
+            entities.append(MovaPetSensor(coordinator, pet["name"], "visits_24h"))
     async_add_entities(entities)
+
+
+# Cat toilet-visit sensors, sourced from coordinator.data["visits"]
+# (event 4.1 history). Each spec: key, data-field, device_class, unit, icon.
+VISIT_SENSORS: tuple[dict[str, Any], ...] = (
+    {
+        "key": "last_cat_weight",
+        "field": "last_weight_kg",
+        "device_class": SensorDeviceClass.WEIGHT,
+        "unit": "kg",
+        "icon": "mdi:scale-bathroom",
+    },
+    {
+        "key": "last_visit",
+        "field": "last_timestamp",
+        "device_class": SensorDeviceClass.TIMESTAMP,
+        "unit": None,
+        "icon": "mdi:cat",
+    },
+    {
+        "key": "last_visit_duration",
+        "field": "last_duration_s",
+        "device_class": SensorDeviceClass.DURATION,
+        "unit": "s",
+        "icon": "mdi:timer-sand",
+    },
+    {
+        "key": "visits_24h",
+        "field": "count_24h",
+        "device_class": None,
+        "unit": "visits",
+        "icon": "mdi:counter",
+    },
+)
+
+
+class MovaVisitSensor(MovaLitterBoxEntity, SensorEntity):
+    """A sensor derived from the latest cat toilet-visit event."""
+
+    def __init__(
+        self, coordinator: MovaLitterBoxCoordinator, spec: dict[str, Any]
+    ) -> None:
+        super().__init__(coordinator)
+        self._spec = spec
+        self._attr_unique_id = f"{coordinator.did}-{spec['key']}"
+        self._attr_translation_key = spec["key"]
+        self._attr_icon = spec["icon"]
+        self._attr_native_unit_of_measurement = spec["unit"]
+        if spec["device_class"]:
+            self._attr_device_class = spec["device_class"]
+        if spec["field"] == "count_24h":
+            self._attr_state_class = SensorStateClass.TOTAL
+
+    @property
+    def native_value(self) -> Any:
+        value = (self.coordinator.data or {}).get("visits", {}).get(
+            self._spec["field"]
+        )
+        if value is None:
+            return None
+        if self._attr_device_class == SensorDeviceClass.TIMESTAMP:
+            try:
+                return datetime.fromtimestamp(float(value), tz=timezone.utc)
+            except (ValueError, TypeError, OSError):
+                return None
+        return value
+
+
+class MovaLastPetSensor(MovaLitterBoxEntity, SensorEntity):
+    """Which configured pet used the box most recently (by weight match)."""
+
+    _attr_translation_key = "last_pet"
+    _attr_icon = "mdi:cat"
+
+    def __init__(self, coordinator: MovaLitterBoxCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.did}-last_pet"
+
+    @property
+    def native_value(self) -> Any:
+        return (self.coordinator.data or {}).get("visits", {}).get("last_pet")
+
+
+class MovaPetSensor(MovaLitterBoxEntity, SensorEntity):
+    """Per-pet sensor: last visit time or 24h visit count."""
+
+    def __init__(
+        self, coordinator: MovaLitterBoxCoordinator, pet: str, kind: str
+    ) -> None:
+        super().__init__(coordinator)
+        self._pet = pet
+        self._kind = kind
+        slug = pet.lower().replace(" ", "_")
+        self._attr_unique_id = f"{coordinator.did}-pet-{slug}-{kind}"
+        if kind == "last_visit":
+            self._attr_name = f"{pet} last visit"
+            self._attr_device_class = SensorDeviceClass.TIMESTAMP
+            self._attr_icon = "mdi:cat"
+        else:
+            self._attr_name = f"{pet} visits (24 h)"
+            self._attr_native_unit_of_measurement = "visits"
+            self._attr_state_class = SensorStateClass.TOTAL
+            self._attr_icon = "mdi:counter"
+
+    @property
+    def native_value(self) -> Any:
+        pet_data = (self.coordinator.data or {}).get("visits", {}).get(
+            "pets", {}
+        ).get(self._pet, {})
+        if self._kind == "last_visit":
+            ts = pet_data.get("last_timestamp")
+            if ts is None:
+                return None
+            try:
+                return datetime.fromtimestamp(float(ts), tz=timezone.utc)
+            except (ValueError, TypeError, OSError):
+                return None
+        return pet_data.get("count_24h", 0)
 
 
 class MovaPropertySensor(MovaLitterBoxEntity, SensorEntity):
