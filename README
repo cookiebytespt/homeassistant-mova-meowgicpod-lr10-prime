@@ -139,9 +139,9 @@ cards:
 | 🌀 | **Smoothing setting** — litter-smoothing offset select: centered, or offset left/right by slight / moderate / significant | ✅ Done |
 | 🆙 | **Firmware updates** — surface the firmware-upgrade check and trigger as an HA `update` entity | 🔜 Planned |
 | ⚖️ | **Weight unit switch** — toggle kg / lb to match the app | 🔜 Planned |
-| 🔧 | **Tune remaining properties** — the last unmapped values (`2.2`, `2.6`, `3.2`, `3.12`, `3.21`); litter level and waste bin state | 🧪 Investigating |
 | 🤖 | **Device entity** — a `vacuum` entity giving HA's native more-info popup (Play = Clean / Resume, Pause, Stop) | ✅ Done |
 | 🖥️ | **Dashboard card** — vacuum-style Lovelace card with Clean / Level / Empty | ✅ Done |
+| 🏛️ | **Propose a `litter_box` HA domain** — a dedicated entity platform + native card (draft in [`docs/`](docs/PROPOSAL-litter-box-entity-platform.md)) to replace the temporary `vacuum` mapping | 📝 Drafted |
 | 📡 | **Push updates** — switch from polling to MQTT for real-time state | 💡 Idea |
 
 Want to help? See below. 👇

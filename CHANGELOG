@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — 2026-07-24
+
+### Added
+
+- **Vacuum-style device entity** — the box is now also exposed as a `vacuum`
+  entity, giving Home Assistant's native device more-info dialog (status view
+  + control row). Play starts a cleaning cycle (or resumes when paused), plus
+  Pause and Stop. *(Temporary approach — mapping onto the `vacuum` domain is
+  a stopgap until a cleaner solution exists; see the README and the drafted
+  `litter_box` entity-platform proposal in `docs/`.)*
+- **Dashboard card** — a custom Lovelace card
+  (`custom:mova-litter-box-card`) with one-tap Clean / Level / Empty, plus
+  Pause / Resume / Stop and the last cat visit. See the README for setup.
+
 ## 0.4.0 — 2026-07-23
 
 ### Added
