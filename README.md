@@ -57,6 +57,74 @@ MOVAhome account (email + password + region), then pick your litter box 🐈:
 
 </details>
 
+## 🤖 Device entity (vacuum-style)
+
+The integration also exposes a `vacuum` entity (e.g.
+`vacuum.casota_dos_gatos`), so the box gets Home Assistant's **native device
+more-info dialog** — the same big status view and control row you know from
+robot vacuums. **Play** starts a cleaning cycle (or resumes when paused),
+plus **Pause** and **Stop**. Emptying and levelling stay as their own
+buttons (and in the card below). Note: HA renders a generic vacuum graphic
+in that dialog — the litter-box actions map to Play/Pause/Stop only, since
+the native popup's buttons are fixed.
+
+> ⚠️ **Temporary approach.** Mapping the litter box onto the `vacuum` domain
+> is a pragmatic way to get a native device dialog today, but it's not a
+> perfect fit — the graphic is a vacuum and only Play/Pause/Stop map. We're
+> keeping it until there's a cleaner solution (e.g. a dedicated appliance
+> entity/card or a custom more-info), at which point this may change or be
+> replaced.
+
+## 🖥️ Dashboard card
+
+A companion Lovelace card gives you a compact, vacuum-style control with
+one-tap **Clean / Level / Empty** (plus Pause / Resume / Stop and the last
+cat visit).
+
+**Install the card resource:**
+
+1. Copy `www/mova-litter-box-card.js` into your Home Assistant
+   `config/www/` folder (so it's at `config/www/mova-litter-box-card.js`).
+2. Settings → Dashboards → ⋮ → *Resources* → *Add resource*
+   - URL: `/local/mova-litter-box-card.js`
+   - Type: **JavaScript module**
+3. Add the card to a dashboard (replace the entity ids with yours — they're
+   based on your device name):
+
+```yaml
+type: custom:mova-litter-box-card
+status: sensor.casota_dos_gatos_status
+clean: button.casota_dos_gatos_start_cleaning
+level: button.casota_dos_gatos_level_litter
+empty: button.casota_dos_gatos_empty_waste
+pause: button.casota_dos_gatos_pause        # optional
+resume: button.casota_dos_gatos_resume      # optional
+stop: button.casota_dos_gatos_stop          # optional
+last_cat: sensor.casota_dos_gatos_last_cat  # optional
+last_weight: sensor.casota_dos_gatos_last_cat_weight  # optional
+```
+
+<details>
+<summary>No custom card? A built-in tile layout works too</summary>
+
+```yaml
+type: grid
+columns: 3
+square: false
+cards:
+  - type: tile
+    entity: button.casota_dos_gatos_start_cleaning
+    name: Clean
+  - type: tile
+    entity: button.casota_dos_gatos_level_litter
+    name: Level
+  - type: tile
+    entity: button.casota_dos_gatos_empty_waste
+    name: Empty
+```
+
+</details>
+
 ## 🗺️ Roadmap
 
 |  | Feature | Status |
@@ -72,6 +140,8 @@ MOVAhome account (email + password + region), then pick your litter box 🐈:
 | 🆙 | **Firmware updates** — surface the firmware-upgrade check and trigger as an HA `update` entity | 🔜 Planned |
 | ⚖️ | **Weight unit switch** — toggle kg / lb to match the app | 🔜 Planned |
 | 🔧 | **Tune remaining properties** — the last unmapped values (`2.2`, `2.6`, `3.2`, `3.12`, `3.21`); litter level and waste bin state | 🧪 Investigating |
+| 🤖 | **Device entity** — a `vacuum` entity giving HA's native more-info popup (Play = Clean / Resume, Pause, Stop) | ✅ Done |
+| 🖥️ | **Dashboard card** — vacuum-style Lovelace card with Clean / Level / Empty | ✅ Done |
 | 📡 | **Push updates** — switch from polling to MQTT for real-time state | 💡 Idea |
 
 Want to help? See below. 👇
